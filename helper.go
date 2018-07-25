@@ -114,6 +114,19 @@ func CheckOCSP(cert *x509.Certificate, issuerCert *x509.Certificate) error {
 	return nil
 }
 
+var revocationReasons = map[int]string{
+	ocsp.Unspecified:          "Unspecified",
+	ocsp.KeyCompromise:        "KeyCompromise",
+	ocsp.CACompromise:         "CACompromise",
+	ocsp.AffiliationChanged:   "AffiliationChanged",
+	ocsp.Superseded:           "Superseded",
+	ocsp.CessationOfOperation: "CessationOfOperation",
+	ocsp.CertificateHold:      "CertificateHold",
+	ocsp.RemoveFromCRL:        "RemoveFromCRL",
+	ocsp.PrivilegeWithdrawn:   "PrivilegeWithdrawn",
+	ocsp.AACompromise:         "AACompromise",
+}
+
 //OcspStatusText comment
 func OcspStatusText(resp *ocsp.Response) string {
 	switch resp.Status {
@@ -121,27 +134,9 @@ func OcspStatusText(resp *ocsp.Response) string {
 		return "Good"
 	case ocsp.Revoked:
 		reason := "Unknown"
-		switch resp.RevocationReason {
-		case ocsp.Unspecified:
-			reason = "Unspecified"
-		case ocsp.KeyCompromise:
-			reason = "KeyCompromise"
-		case ocsp.CACompromise:
-			reason = "CACompromise"
-		case ocsp.AffiliationChanged:
-			reason = "AffiliationChanged"
-		case ocsp.Superseded:
-			reason = "Superseeded"
-		case ocsp.CessationOfOperation:
-			reason = "CessationOfOperation"
-		case ocsp.CertificateHold:
-			reason = "CertificateHold"
-		case ocsp.RemoveFromCRL:
-			reason = "RemoveFromCRL"
-		case ocsp.PrivilegeWithdrawn:
-			reason = "PriviledgeWithdrawn"
-		case ocsp.AACompromise:
-			reason = "AACompromise"
+		r, ok := revocationReasons[resp.RevocationReason]
+		if ok {
+			reason = r
 		}
 		return fmt.Sprintf("Revoked at %v. Reason: %s", resp.RevokedAt, reason)
 	case ocsp.Unknown:
