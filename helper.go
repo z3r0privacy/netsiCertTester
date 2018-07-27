@@ -48,6 +48,15 @@ func LoadCert(certFile string, certKey string, chain []byte) (tls.Certificate, e
 
 //VerifyPeerCertificate comment
 func (h Helper) VerifyPeerCertificate(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
+	if h.name == "Server" {
+		if !ContainsExtKeyUsage(verifiedChains[0][0].ExtKeyUsage, x509.ExtKeyUsageClientAuth) {
+			return fmt.Errorf("The client did not sent a certificate for client authentication")
+		}
+	} else {
+		if !ContainsExtKeyUsage(verifiedChains[0][0].ExtKeyUsage, x509.ExtKeyUsageServerAuth) {
+			return fmt.Errorf("The server did not sent a certificate for server authentication")
+		}
+	}
 	for i := 0; i < len(verifiedChains); i++ {
 		for j := 0; j < len(verifiedChains[i]); j++ {
 			cCert := verifiedChains[i][j]
@@ -56,7 +65,7 @@ func (h Helper) VerifyPeerCertificate(rawCerts [][]byte, verifiedChains [][]*x50
 			ocspInfo := ""
 			if !isRoot {
 				if err := CheckOCSP(cCert, verifiedChains[i][j+1]); err != nil {
-					return err
+					//return err
 				}
 				ocspInfo = " including OCSP"
 			}
@@ -66,6 +75,16 @@ func (h Helper) VerifyPeerCertificate(rawCerts [][]byte, verifiedChains [][]*x50
 	}
 
 	return nil
+}
+
+//ContainsExtKeyUsage comment
+func ContainsExtKeyUsage(usages []x509.ExtKeyUsage, usage x509.ExtKeyUsage) bool {
+	for _, u := range usages {
+		if u == usage {
+			return true
+		}
+	}
+	return false
 }
 
 //CheckOCSP comment
